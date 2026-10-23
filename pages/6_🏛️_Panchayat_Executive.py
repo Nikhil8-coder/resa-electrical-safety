@@ -29,7 +29,70 @@ try:
 
     st.divider()
 
-    col_charts, col_sla = st.columns([1.3, 1])
+    # Worker Escalations & Requests for Government Support
+    st.markdown("### 🚨 Urgent Worker Escalations Requiring Government Support")
+    st.caption("Lineworkers in the field who have requested Gram Panchayat assistance (tree removal, police barricades, heavy cranes):")
+
+    escalated_cs = [c for c in st.session_state.svc.c.values() if c.get("escalated")]
+
+    if not escalated_cs:
+        st.success("✅ No urgent worker escalations currently pending. All field maintenance is proceeding normally.")
+    else:
+        for ec in escalated_cs:
+            with st.container(border=True):
+                st.markdown(f"#### ⚠️ Ticket `{ec['id']}` — {ec['category']} (Feeder: `{ec.get('line')}`)")
+                st.markdown(f"**Assigned Worker:** `{ec.get('worker')}` | **Current Work Status:** `{ec.get('status')}`")
+                st.error(f"**Worker Escalation Reason:** {ec.get('escalation_reason') or 'Assistance requested'}")
+                if ec.get("eta"):
+                    st.warning(f"⏱️ **Worker Estimated Repair Duration:** {ec.get('eta')} — *{ec.get('eta_reason')}*")
+
+                st.markdown("**🏛️ Government Support Action Center:**")
+                act_col1, act_col2, act_col3 = st.columns(3)
+
+                with act_col1:
+                    if st.button("🌳 Dispatch Tree Clearance Crew", key=f"pan_p_tree_{ec['id']}", use_container_width=True):
+                        st.session_state.svc.provide_govt_support(user_tuple, ec['id'], "Tree Clearance", "Panchayat emergency tree-trimming team dispatched to site")
+                        st.success("Tree cutting crew mobilized!")
+                        st.rerun()
+
+                with act_col2:
+                    if st.button("🚧 Mobilize Police & Barricades", key=f"pan_p_pol_{ec['id']}", use_container_width=True):
+                        st.session_state.svc.provide_govt_support(user_tuple, ec['id'], "Police Barricades", "Local police and traffic barricades stationed for public safety")
+                        st.success("Police barricades authorized!")
+                        st.rerun()
+
+                with act_col3:
+                    if st.button("🚜 Authorize JCB / Heavy Crane", key=f"pan_p_jcb_{ec['id']}", use_container_width=True):
+                        st.session_state.svc.provide_govt_support(user_tuple, ec['id'], "Heavy Machinery", "Gram Panchayat emergency JCB / Crane funded and dispatched")
+                        st.success("Heavy machinery dispatched!")
+                        st.rerun()
+
+    st.divider()
+
+    # Comprehensive Citizen Complaints & Worker Status Directory
+    st.markdown("### 📋 Village Citizen Complaints, Assigned Workers & Work Status")
+    all_complaints = list(st.session_state.svc.c.values())
+
+    if not all_complaints:
+        st.info("No recorded citizen complaints in the registry.")
+    else:
+        for c in reversed(all_complaints):
+            with st.container(border=True):
+                head1, head2, head3 = st.columns([1.5, 1.2, 1])
+                with head1:
+                    st.markdown(f"**Ticket:** `{c['id']}` • **{c['category']}**")
+                    st.caption(f"Reported by: **{c.get('citizen')}** | 📍 Lat: `{c.get('lat'):.4f}`, Lon: `{c.get('lon'):.4f}`")
+                    st.write(f"*{c.get('desc')}*")
+                with head2:
+                    st.markdown(f"**Assigned Worker:** `{c.get('worker') or 'Pending Dispatch'}`")
+                    st.markdown(f"**Feeder Line:** `{c.get('line') or 'Unassigned'}`")
+                    if c.get("eta"):
+                        st.markdown(f"⏱️ **Worker ETA:** `{c.get('eta')}` ({c.get('eta_reason', '')})")
+                with head3:
+                    status_badge = "🟢 RESOLVED" if c.get("status") == "RESOLVED" else ("🔵 " + c.get("status"))
+                    st.markdown(f"Status: **{status_badge}**")
+                    if c.get("govt_support"):
+                        st.caption("✓ Govt Support Granted")
 
     with col_charts:
         st.subheader("📊 Incident Category Distribution")

@@ -50,6 +50,56 @@ with col_orders:
                 st.write(f"**Consumer Statement:** *{c.get('desc')}*")
                 st.info(f"**Current Ticket Status:** `{c.get('status')}`")
 
+            # Worker Feature 1: Estimate Hours/Days & Materials Needed
+            st.markdown("### ⏱️ Report Repair Duration & ETA")
+            st.caption("Tell the citizen and Gram Panchayat how long this repair will take and what materials are needed:")
+
+            with st.form(f"worker_page_eta_form_{selected_cid}"):
+                eta_time = st.selectbox(
+                    "Estimated Repair Time Needed *",
+                    options=["1 Hour", "2 Hours", "3 Hours", "5 Hours", "8 Hours", "1 Day", "2 Days", "3 Days"]
+                )
+                eta_cause = st.text_input(
+                    "Reason for Delay / Technical Problem *",
+                    value=c.get("eta_reason", "Conductor snapped across poles; requires tensioning")
+                )
+                eta_res = st.text_input(
+                    "Materials / Equipment Required *",
+                    value=c.get("resources_needed", "11kV Pin Insulator, 50m ACSR wire, bucket ladder")
+                )
+                btn_eta = st.form_submit_button("📢 Publish Time Estimate to Citizen & Panchayat", type="primary")
+
+                if btn_eta:
+                    st.session_state.svc.update_estimate(user_tuple, selected_cid, eta_time, eta_cause, eta_res)
+                    st.success(f"Estimated repair duration ({eta_time}) updated successfully!")
+                    st.rerun()
+
+            # Worker Feature 2: Escalate to Gram Panchayat for Government Support
+            st.markdown("### 🏛️ Request Gram Panchayat Support")
+            st.caption("If you need government assistance on-site (tree cutting, police barricade, heavy machinery):")
+
+            with st.form(f"worker_page_panchayat_esc_{selected_cid}"):
+                esc_type = st.selectbox(
+                    "Select Government Support Needed *",
+                    options=[
+                        "Tree Trimming / Fallen Branch Clearance",
+                        "Police Barricades & Traffic / Crowd Control",
+                        "Heavy Machinery Support (JCB / Crane)",
+                        "Hospital / Health Clinic Emergency Generator",
+                        "Administrative Right-of-Way Access"
+                    ]
+                )
+                esc_msg = st.text_input(
+                    "Urgent Message to Gram Panchayat Head *",
+                    value="Heavy fallen tree branch resting on 11kV conductor span. Need Panchayat tree-cutting team and road barricade."
+                )
+                btn_esc = st.form_submit_button("📢 Escalate to Gram Panchayat for Assistance", type="primary")
+
+                if btn_esc:
+                    st.session_state.svc.escalate(user_tuple, selected_cid, f"{esc_type}: {esc_msg}")
+                    st.success("Escalation dispatched to Gram Panchayat! Panchayat Head will be notified.")
+                    st.rerun()
+
 # Right Column: Mandatory LOTO Execution Desk
 with col_loto:
     st.subheader("🛡️ Mandatory 4-Step Safety SOP Checklist (LOTO)")

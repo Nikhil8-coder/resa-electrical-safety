@@ -62,6 +62,9 @@ class Act(BaseModel):
     approve: bool = True
     checklist: bool = False
     clearance_reason: str = ""
+    eta: str = ""
+    resources: str = ""
+    support_type: str = ""
 
 def user(authorization: str = Header(None)):
     token = (authorization or "").removeprefix("Bearer ").strip()
@@ -183,7 +186,9 @@ def act(cid: str, action: str, b: Act, u=Depends(user)):
         "complete": lambda: svc.complete(u, cid),
         "restore": lambda: svc.restore(u, cid, b.clearance_reason, b.reason),
         "close": lambda: svc.close(u, cid),
-        "escalate": lambda: svc.escalate(u, cid),
+        "escalate": lambda: svc.escalate(u, cid, b.reason or "Urgent assistance requested from Gram Panchayat"),
+        "estimate": lambda: svc.update_estimate(u, cid, b.eta or b.reason or "3 Hours", b.reason or "", b.resources or ""),
+        "govt-support": lambda: svc.provide_govt_support(u, cid, b.support_type or b.reason or "Emergency Equipment", b.reason or ""),
     }
     if action not in m:
         raise HTTPException(404, "unknown action")

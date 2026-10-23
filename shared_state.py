@@ -8,7 +8,7 @@ if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 from app.workflows.safety import Grid, Role, S, Denied
-from app.services.resa import Resa, CATEGORIES, HAZARD
+from app.services.resa import Resa, CATEGORIES, HAZARD, FLOW
 
 PERSONAS = {
     "cit1": {"name": "Anita Devi (Citizen)", "role": Role.CITIZEN, "icon": "👤", "title": "Citizen / Consumer"},
@@ -55,13 +55,16 @@ def init_shared_state():
             pass
 
     if "current_user" not in st.session_state:
-        st.session_state.current_user = "cit1"
+        st.session_state.current_user = None
+
+    if "authenticated_role" not in st.session_state:
+        st.session_state.authenticated_role = None
 
     if "logged_in_users" not in st.session_state:
-        st.session_state.logged_in_users = {"cit1": True}
+        st.session_state.logged_in_users = {}
 
 def get_user_tuple(username=None):
-    user = username or st.session_state.get("current_user", "cit1")
+    user = username or st.session_state.get("current_user") or "cit1"
     info = PERSONAS.get(user, PERSONAS["cit1"])
     return (user, info["role"])
 
@@ -85,9 +88,14 @@ def render_sidebar():
     st.sidebar.caption("Central Electrical System Coordination")
     
     # Quick active user profile display
-    u = st.session_state.get("current_user", "cit1")
-    u_info = PERSONAS[u]
+    u = st.session_state.get("current_user") or "cit1"
+    u_info = PERSONAS.get(u, PERSONAS["cit1"])
     st.sidebar.info(f"**Current Session:**\n{u_info['icon']} **{u_info['name']}**\nRole: `{u_info['title']}`")
+
+    if st.sidebar.button("🚪 Switch Role / Logout", use_container_width=True):
+        st.session_state.authenticated_role = None
+        st.session_state.current_user = None
+        st.switch_page("streamlit_app.py")
 
     st.sidebar.divider()
     st.sidebar.markdown("**📡 Regional Feeder Lines Status**")

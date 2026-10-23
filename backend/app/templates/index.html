@@ -65,7 +65,6 @@
             <div class="text-base sm:text-lg font-extrabold tracking-tight text-white group-hover:text-amber-300 transition-colors">
               RESA National Electrical Safety Portal
             </div>
-            <div class="text-xs text-slate-400 hidden md:block">Reliable Electrical System Addresser & Safety Protocol Enforcement</div>
           </div>
         </a>
       </div>
@@ -532,6 +531,10 @@
           </div>
 
           <!-- 4-Step Checklist -->
+          <button onclick="workerAutoCheckLOTO()" class="w-full py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition-all flex items-center justify-center gap-2">
+            <span>⚡</span> Auto-Check All 4 LOTO Safety Steps
+          </button>
+
           <div class="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs">
             <label class="flex items-start gap-3 p-2.5 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700">
               <input type="checkbox" id="chkDead" class="mt-0.5 w-4 h-4 text-amber-500">
@@ -582,6 +585,62 @@
             </button>
             <button onclick="workerCompleteJob()" id="btnWorkerComplete" class="py-2.5 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-500 text-white text-xs">
               ✅ Complete & Submit Field Clearance
+            </button>
+          </div>
+
+          <!-- Worker ETA Duration Estimator & Materials Needed -->
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs flex flex-col gap-3">
+            <h4 class="font-bold text-white flex items-center gap-1.5 text-sm">
+              <span>⏱️</span> Report Repair Duration & Materials Needed
+            </h4>
+            <p class="text-slate-400 text-[11px]">Tell the citizen and Gram Panchayat how long this repair will take:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-[11px] text-slate-400 block mb-1">Estimated Repair Time *</label>
+                <select id="workerEtaInput" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+                  <option value="1 Hour">1 Hour</option>
+                  <option value="2 Hours">2 Hours</option>
+                  <option value="4 Hours" selected>4 Hours</option>
+                  <option value="8 Hours">8 Hours</option>
+                  <option value="1 Day">1 Day</option>
+                  <option value="2 Days">2 Days</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400 block mb-1">Reason for Delay / Technical Cause</label>
+                <input id="workerEtaReason" type="text" value="Conductor snapped across poles; requires tensioning" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+              </div>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Materials / Equipment Required</label>
+              <input id="workerEtaResources" type="text" value="11kV Pin Insulator, 50m ACSR wire, bucket ladder" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+            </div>
+            <button onclick="workerSubmitEstimate()" class="py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all">
+              📢 Publish Time Estimate to Citizen & Panchayat
+            </button>
+          </div>
+
+          <!-- Escalate to Gram Panchayat for Government Support -->
+          <div class="bg-slate-900 p-4 rounded-xl border border-rose-900/40 text-xs flex flex-col gap-3">
+            <h4 class="font-bold text-rose-300 flex items-center gap-1.5 text-sm">
+              <span>🏛️</span> Request Gram Panchayat Government Support
+            </h4>
+            <p class="text-slate-400 text-[11px]">Request village assistance for right-of-way tree cutting, police barricades, or heavy JCB crane:</p>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Support Type Required *</label>
+              <select id="workerEscType" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+                <option value="Tree Trimming / Fallen Branch Clearance">Tree Trimming / Fallen Branch Clearance</option>
+                <option value="Police Barricades & Traffic / Crowd Control">Police Barricades & Traffic / Crowd Control</option>
+                <option value="Heavy Machinery Support (JCB / Crane)">Heavy Machinery Support (JCB / Crane)</option>
+                <option value="Hospital Emergency Generator">Hospital Emergency Generator</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Message to Gram Panchayat *</label>
+              <input id="workerEscMsg" type="text" value="Heavy fallen tree branch resting on 11kV conductor span. Need Panchayat tree-cutting crew." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+            </div>
+            <button onclick="workerEscalatePanchayat()" class="py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all">
+              📢 Send Urgent Escalation to Gram Panchayat
             </button>
           </div>
         </div>
@@ -669,6 +728,27 @@
           <div class="p-3.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
             🛡️ <strong>Safety Assurance:</strong> 100% of line restorations are backed by database trigger-enforced immutable audit logs.
           </div>
+        </div>
+      </div>
+
+      <!-- Worker Escalations & Requests for Government Support -->
+      <div class="gov-card p-6 flex flex-col gap-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>🚨</span> Urgent Worker Escalations Requiring Government Support
+        </h3>
+        <p class="text-xs text-slate-400">Lineworkers requesting tree clearance, police barricades, or heavy machinery:</p>
+        <div id="panchayatEscalationsList" class="flex flex-col gap-3">
+          <div class="text-slate-500 text-xs text-center py-4">No active worker escalations. All field repairs proceeding normally.</div>
+        </div>
+      </div>
+
+      <!-- Village Complaints, Workers & Status Directory -->
+      <div class="gov-card p-6 flex flex-col gap-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📋</span> Village Complaints, Assigned Workers & Work Status
+        </h3>
+        <div id="panchayatComplaintsList" class="flex flex-col gap-3">
+          <div class="text-slate-500 text-xs text-center py-4">Loading village complaints...</div>
         </div>
       </div>
     </div>
@@ -997,6 +1077,22 @@
           }
         }).join('');
 
+        let etaHtml = c.eta ? `
+          <div class="p-4 rounded-xl bg-amber-500/20 border-2 border-amber-500/60 text-xs">
+            <h4 class="font-bold text-amber-300 text-sm mb-1">⏱️ Field Lineworker Repair Time Estimate</h4>
+            <div class="text-white text-sm">Estimated Time to Restore: <strong class="text-yellow-300 text-base">${c.eta}</strong></div>
+            <div class="text-slate-300 mt-1">Reason: ${c.eta_reason || 'Standard maintenance'}</div>
+            ${c.resources_needed ? `<div class="text-slate-400 mt-0.5">Required Materials: ${c.resources_needed}</div>` : ''}
+          </div>
+        ` : '';
+
+        let govtSupportHtml = (c.govt_support && c.govt_support.length) ? `
+          <div class="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-xs space-y-1">
+            <h4 class="font-bold text-emerald-300 text-sm mb-1">🏛️ Gram Panchayat Government Support Provided</h4>
+            ${c.govt_support.map(s => `<div class="text-slate-200">• <strong>${s.type}:</strong> ${s.notes} <em>(Approved by ${s.by})</em></div>`).join('')}
+          </div>
+        ` : '';
+
         let timelineHtml = (c.timeline || []).map(t => `
           <div class="text-xs text-slate-300">🕒 <span class="font-mono text-slate-400">${t[0]}</span> — <strong class="text-amber-300">${t[1]}</strong> ${t[2] ? '— <em>' + t[2] + '</em>' : ''}</div>
         `).join('');
@@ -1007,6 +1103,9 @@
               <h3 class="text-sm font-bold text-white mb-3">📊 7-Stage Digital Restoration Stepper</h3>
               <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">${stepperHtml}</div>
             </div>
+
+            ${etaHtml}
+            ${govtSupportHtml}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1.5">
@@ -1299,6 +1398,66 @@
       }
     }
 
+    function workerAutoCheckLOTO() {
+      document.getElementById("chkDead").checked = true;
+      document.getElementById("chkEarth").checked = true;
+      document.getElementById("chkPadlock").checked = true;
+      document.getElementById("chkPPE").checked = true;
+      showToast("All 4 LOTO safety items checked!", "success");
+    }
+
+    async function workerSubmitEstimate() {
+      if (!currentSelectedWorkerTicket) return showToast("Select a ticket first", "warning");
+      const eta = document.getElementById("workerEtaInput").value;
+      const reason = document.getElementById("workerEtaReason").value;
+      const resources = document.getElementById("workerEtaResources").value;
+      const wrkTok = CACHED_TOKENS["worker1"] || token;
+      const res = await fetch(`${API}/api/complaints/${currentSelectedWorkerTicket}/estimate`, {
+        method: "POST", headers: { "Authorization": `Bearer ${wrkTok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ eta: eta, reason: reason, resources: resources })
+      });
+      if (res.ok) {
+        showToast(`Time estimate (${eta}) published to Citizen & Panchayat!`, "success");
+        refreshData();
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Error updating estimate", "danger");
+      }
+    }
+
+    async function workerEscalatePanchayat() {
+      if (!currentSelectedWorkerTicket) return showToast("Select a ticket first", "warning");
+      const type = document.getElementById("workerEscType").value;
+      const msg = document.getElementById("workerEscMsg").value;
+      const wrkTok = CACHED_TOKENS["worker1"] || token;
+      const res = await fetch(`${API}/api/complaints/${currentSelectedWorkerTicket}/escalate`, {
+        method: "POST", headers: { "Authorization": `Bearer ${wrkTok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: `${type}: ${msg}` })
+      });
+      if (res.ok) {
+        showToast("Urgent escalation dispatched to Gram Panchayat!", "warning");
+        refreshData();
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Error escalating", "danger");
+      }
+    }
+
+    async function panchayatGrantSupport(cid, supportType, notes) {
+      const panTok = CACHED_TOKENS["pan1"] || token;
+      const res = await fetch(`${API}/api/complaints/${cid}/govt-support`, {
+        method: "POST", headers: { "Authorization": `Bearer ${panTok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ support_type: supportType, reason: notes })
+      });
+      if (res.ok) {
+        showToast(`Government Support (${supportType}) granted for ${cid}!`, "success");
+        refreshData();
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Error granting support", "danger");
+      }
+    }
+
     // Panchayat KPI
     async function fetchDashboardKPI() {
       try {
@@ -1333,6 +1492,64 @@
                 </div>
               </div>
             `;
+          }
+        }
+
+        const cRes = await fetch(`${API}/api/complaints`, { headers: { "Authorization": `Bearer ${panTok}` } });
+        if (cRes.ok) {
+          const allCs = await cRes.json();
+          const escBox = document.getElementById("panchayatEscalationsList");
+          const compBox = document.getElementById("panchayatComplaintsList");
+
+          if (escBox) {
+            const escList = allCs.filter(c => c.escalated);
+            if (escList.length === 0) {
+              escBox.innerHTML = `<div class="text-emerald-400 text-xs p-3 rounded-lg bg-emerald-950/40 border border-emerald-800">✅ No urgent worker escalations pending. Field maintenance proceeding normally.</div>`;
+            } else {
+              escBox.innerHTML = escList.map(ec => `
+                <div class="p-4 rounded-xl bg-slate-900 border border-rose-900/50 flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <strong class="text-white">Ticket ${ec.id} — ${ec.category} (Feeder ${ec.line || 'Unassigned'})</strong>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">ACTION REQUIRED</span>
+                  </div>
+                  <div class="text-xs text-rose-300"><strong>Worker Escalation:</strong> ${ec.escalation_reason || 'Government assistance requested'}</div>
+                  ${ec.eta ? `<div class="text-xs text-amber-300"><strong>Worker Time Estimate:</strong> ${ec.eta} (${ec.eta_reason || ''})</div>` : ''}
+                  <div class="flex items-center gap-2 mt-1">
+                    <button onclick="panchayatGrantSupport('${ec.id}', 'Tree Clearance', 'Panchayat tree-trimming team deployed')" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                      🌳 Dispatch Tree Clearance Crew
+                    </button>
+                    <button onclick="panchayatGrantSupport('${ec.id}', 'Police Barricades', 'Police barricades deployed for crowd safety')" class="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold">
+                      🚧 Mobilize Police Barricades
+                    </button>
+                    <button onclick="panchayatGrantSupport('${ec.id}', 'Heavy Machinery', 'Emergency JCB Crane dispatched')" class="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold">
+                      🚜 Authorize JCB / Crane
+                    </button>
+                  </div>
+                </div>
+              `).join('');
+            }
+          }
+
+          if (compBox) {
+            if (allCs.length === 0) {
+              compBox.innerHTML = `<div class="text-slate-500 text-xs text-center py-4">No citizen complaints registered.</div>`;
+            } else {
+              compBox.innerHTML = allCs.map(c => `
+                <div class="p-3.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <strong class="text-white">${c.id} • ${c.category}</strong>
+                    <p class="text-slate-400 text-[11px] mt-0.5">${c.desc}</p>
+                    <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                      <span>👤 Citizen: <strong>${c.citizen}</strong></span>
+                      <span>🛠️ Worker: <strong>${c.worker || 'Pending'}</strong></span>
+                      <span>⚡ Feeder: <strong>${c.line || 'Unassigned'}</strong></span>
+                      ${c.eta ? `<span class="text-amber-400">⏱️ ETA: <strong>${c.eta}</strong></span>` : ''}
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded font-bold text-[10px] ${c.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}">${c.status}</span>
+                </div>
+              `).join('');
+            }
           }
         }
       } catch (e) {

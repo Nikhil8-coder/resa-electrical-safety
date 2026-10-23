@@ -326,7 +326,9 @@ class Resa:
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
         line = c["line"]
-        if self.grid.state.get(line) != S.MAINT_REQ:
+        if self.grid.state.get(line) == S.NORMAL:
+            self.grid.transition(a[0], a[1], line, S.MAINT_REQ, cid, reason="Auto-advance assessment")
+        elif self.grid.state.get(line) != S.MAINT_REQ:
             self.grid.state[line] = S.MAINT_REQ
         self.grid.transition(a[0], a[1], line, S.ISO_REQ, cid, reason=reason)
         self.iso[cid] = dict(status="REQUESTED", worker=a[0], line=c["line"], gps=gps, reason=reason)
@@ -368,6 +370,8 @@ class Resa:
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
         line = c["line"]
+        if self.grid.state.get(line) != S.WIP:
+            self.grid.state[line] = S.WIP
         self.grid.transition(a[0], a[1], line, S.DONE, cid)
         self.notes.send("WORK_COMPLETED", "SUBSTATION", f"{cid} clearance submitted")
 
@@ -387,11 +391,41 @@ class Resa:
         self._role(a, Role.OPERATOR)
         self._step(self._get(a, cid), "CLOSED")
 
-    def escalate(self, a, cid):
-        self._role(a, Role.OPERATOR)
+    def escalate(self, a, cid, reason="Urgent assistance requested from Gram Panchayat"):
+        self._role(a, Role.OPERATOR, Role.WORKER, Role.ADMIN)
         c = self._get(a, cid)
         c["escalated"] = True
+        c["escalation_reason"] = reason
+        self._step(c, c["status"], f"ESCALATED TO PANCHAYAT: {reason}")
         self._persist_complaint(c)
+        self.notes.send("ESCALATED", "PANCHAYAT", f"{cid} escalated: {reason}")
+
+    def update_estimate(self, a, cid, eta, reason="", resources=""):
+        self._role(a, Role.WORKER, Role.OPERATOR, Role.ADMIN)
+        c = self._get(a, cid)
+        c["eta"] = eta
+        c["eta_reason"] = reason
+        c["resources_needed"] = resources
+        note = f"ETA: {eta}" + (f" ({reason})" if reason else "") + (f" | Required: {resources}" if resources else "")
+        self._step(c, c["status"], f"WORKER ESTIMATE: {note}")
+        self._persist_complaint(c)
+        self.notes.send("ETA_UPDATED", c["citizen"], f"Repair time update for {cid}: {note}")
+
+    def provide_govt_support(self, a, cid, support_type, notes=""):
+        self._role(a, Role.PANCHAYAT, Role.ADMIN)
+        c = self._get(a, cid)
+        if "govt_support" not in c or not isinstance(c["govt_support"], list):
+            c["govt_support"] = []
+        c["govt_support"].append({
+            "ts": self._now().isoformat(),
+            "type": support_type,
+            "notes": notes,
+            "by": a[0]
+        })
+        self._step(c, c["status"], f"PANCHAYAT SUPPORT GRANTED: {support_type} ({notes})")
+        self._persist_complaint(c)
+        if c.get("worker"):
+            self.notes.send("GOVT_SUPPORT", c["worker"], f"Gram Panchayat granted support: {support_type}")
 
     def dashboard(self, a):
         self._role(a, Role.OPERATOR, Role.PANCHAYAT)

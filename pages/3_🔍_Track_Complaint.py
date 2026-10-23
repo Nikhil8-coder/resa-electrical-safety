@@ -76,7 +76,29 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+        # Worker Estimated Time (ETA) Highlight
+        if c.get("eta"):
+            st.markdown(f"""
+            <div style="background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; padding: 16px; border-radius: 10px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 6px 0; color: #fbbf24;">⏱️ Field Lineworker Repair Time Estimate</h4>
+                <p style="margin: 0; font-size: 14px; color: #ffffff;">
+                    <strong>Estimated Time to Restore Power:</strong> <span style="font-size: 16px; font-weight: 800; color: #fef08a;">{c['eta']}</span><br>
+                    <strong>Delay / Root Cause Reason:</strong> {c.get('eta_reason') or 'Standard repair'}<br>
+                    {f"<strong>Materials / Equipment Required:</strong> {c.get('resources_needed')}" if c.get('resources_needed') else ""}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Government / Panchayat Support Highlight
+        if c.get("govt_support"):
+            st.markdown("""<div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; padding: 14px; border-radius: 10px; margin-bottom: 16px;">
+                <h5 style="margin: 0 0 4px 0; color: #10b981;">🏛️ Gram Panchayat Government Support Provided</h5>
+            """, unsafe_allow_html=True)
+            for sup in c["govt_support"]:
+                st.markdown(f"- **{sup['type']}**: {sup['notes']} *(Approved by {sup['by']})*")
+            st.markdown("</div>", unsafe_allow_html=True)
 
         # Ticket Information Card
         col_info1, col_info2 = st.columns(2)
