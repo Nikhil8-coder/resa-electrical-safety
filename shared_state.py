@@ -2,13 +2,18 @@ import sys
 from pathlib import Path
 import streamlit as st
 
-# Ensure backend package is in python path
-backend_dir = Path(__file__).parent / "backend"
+# Ensure root and backend package are in python path
+root_dir = Path(__file__).resolve().parent
+if str(root_dir) not in sys.path:
+    sys.path.insert(0, str(root_dir))
+backend_dir = root_dir / "backend"
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 from app.workflows.safety import Grid, Role, S, Denied
 from app.services.resa import Resa, CATEGORIES, HAZARD, FLOW
+
+FLOW = ["SUBMITTED", "ACKNOWLEDGED", "ASSIGNED", "WORKER_DISPATCHED", "WORK_IN_PROGRESS", "RESOLVED", "CLOSED"]
 
 PERSONAS = {
     "cit1": {"name": "Anita Devi (Citizen)", "role": Role.CITIZEN, "icon": "👤", "title": "Citizen / Consumer"},

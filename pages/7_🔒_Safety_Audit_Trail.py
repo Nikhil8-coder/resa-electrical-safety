@@ -1,3 +1,13 @@
+import sys
+from pathlib import Path
+
+_root_dir = Path(__file__).resolve().parent.parent
+if str(_root_dir) not in sys.path:
+    sys.path.insert(0, str(_root_dir))
+_backend_dir = _root_dir / "backend"
+if str(_backend_dir) not in sys.path:
+    sys.path.insert(0, str(_backend_dir))
+
 import streamlit as st
 import pandas as pd
 from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple

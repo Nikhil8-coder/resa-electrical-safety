@@ -1,5 +1,20 @@
+import sys
+from pathlib import Path
+
+# Ensure root and backend directory in python path for Streamlit Cloud
+_root_dir = Path(__file__).resolve().parent.parent
+if str(_root_dir) not in sys.path:
+    sys.path.insert(0, str(_root_dir))
+_backend_dir = _root_dir / "backend"
+if str(_backend_dir) not in sys.path:
+    sys.path.insert(0, str(_backend_dir))
+
 import streamlit as st
-from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, FLOW
+try:
+    from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, FLOW
+except ImportError:
+    from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple
+    FLOW = ["SUBMITTED", "ACKNOWLEDGED", "ASSIGNED", "WORKER_DISPATCHED", "WORK_IN_PROGRESS", "RESOLVED", "CLOSED"]
 
 st.set_page_config(
     page_title="Track Breakdown Ticket — RESA",
