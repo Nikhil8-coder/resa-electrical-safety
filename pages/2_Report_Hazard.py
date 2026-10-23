@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 
+# Ensure root and backend package are in python path
 _root_dir = Path(__file__).resolve().parent.parent
 if str(_root_dir) not in sys.path:
     sys.path.insert(0, str(_root_dir))
@@ -47,12 +48,13 @@ with col_form:
         description = st.text_area(
             "Detailed Description of Incident / Hazard *",
             placeholder="Please detail exact location landmarks, extent of damage, presence of water/fire, and immediate public safety risk...",
-            height=120
+            height=130
         )
 
         st.markdown("**📍 Location & GPS Coordinates**")
+        landmark = st.text_input("Village / Colony Landmark *", value="Near Pole P-42, Shiv Mandir Road, Ward 4")
+
         gps_col1, gps_col2 = st.columns(2)
-        
         default_lat = st.session_state.get("auto_lat", 17.3850)
         default_lon = st.session_state.get("auto_lon", 78.4867)
 
@@ -67,7 +69,7 @@ with col_form:
 
         st.caption("Statutory Warning: Submitting false or mischievous hazard reports is punishable under Section 146 of the Electricity Act.")
 
-        submitted = st.form_submit_button("🚀 Submit Official Hazard Report", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("🚨 Submit Official Hazard Report", type="primary", use_container_width=True)
 
         if submitted:
             if not description.strip():
@@ -75,18 +77,18 @@ with col_form:
             else:
                 try:
                     photos = [photo_file.name] if photo_file else ["site_photo.jpg"]
-                    cid = st.session_state.svc.create(user_tuple, category, description, lat, lon, photos)
-                    
-                    st.success(f"🎉 **Report Registered Successfully!** Your Official Ticket ID is **`{cid}`**")
+                    full_desc = f"{description} [Landmark: {landmark}]"
+                    cid = st.session_state.svc.create(user_tuple, category, full_desc, lat, lon, photos)
+
+                    st.success(f"✅ **Report Registered Successfully!** Your Official Ticket ID is **`{cid}`**")
                     st.session_state.last_submitted_cid = cid
                     st.session_state.tracked_ticket_id = cid
 
-                    # Printable confirmation receipt
                     st.markdown(f"""
                     <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; padding: 18px; border-radius: 10px; margin-top: 14px;">
-                        <h4 style="margin: 0 0 6px 0; color: #10b981;">✅ Official Ticket Confirmation</h4>
-                        <p style="margin: 0; font-size: 13px; color: #f1f5f9;">
-                            <strong>Ticket ID:</strong> {cid}<br>
+                        <h4 style="margin: 0 0 6px 0; color: #10b981;">🎫 Official Ticket Confirmation</h4>
+                        <p style="margin: 0; font-size: 13px;">
+                            <strong>Ticket ID:</strong> <code>{cid}</code><br>
                             <strong>Category:</strong> {category}<br>
                             <strong>Priority:</strong> {'P1 (Emergency Hazard)' if is_p1 else 'P3 (Standard Outage)'}<br>
                             <strong>Status:</strong> SUBMITTED (Dispatched to Substation Operator Queue)
@@ -100,10 +102,10 @@ with col_form:
     if "last_submitted_cid" in st.session_state:
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button(f"🔍 Track Ticket {st.session_state.last_submitted_cid} on Tracking Page ➔", type="secondary"):
-            st.switch_page("pages/3_🔍_Track_Complaint.py")
+            st.switch_page("pages/6_Track_Complaint.py")
 
 with col_guidelines:
-    st.subheader("📋 Public Safety SOP Guidelines")
+    st.subheader("🛡️ Public Safety SOP Guidelines")
     st.markdown("""
     * **Stay at least 10 meters (33 feet) away** from any broken conductor touching the ground.
     * **Never touch fallen wires**, fencing, or trees in contact with electrical cables.
@@ -119,5 +121,5 @@ with col_guidelines:
     st.markdown("- **Feeder LN-205**: 33 kV Substation Trunk Transmission")
     st.markdown("- **Feeder LN-311**: Agricultural Irrigation Feeder Line")
 
-    if st.button("← Back to Citizen Services", use_container_width=True):
-        st.switch_page("pages/1_📢_Citizen_Services.py")
+    if st.button("⬅️ Return to Citizen Portal", use_container_width=True):
+        st.switch_page("pages/1_Citizen_Portal.py")
