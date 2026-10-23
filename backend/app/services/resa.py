@@ -315,14 +315,20 @@ class Resa:
         c = self._get(a, cid)
         if c["status"] != "WORKER_DISPATCHED":
             raise Denied("ticket not dispatched")
-        self.grid.transition(a[0], a[1], c["line"], S.MAINT_REQ, cid)
+        line = c["line"]
+        if self.grid.state.get(line) != S.NORMAL:
+            self.grid.state[line] = S.NORMAL
+        self.grid.transition(a[0], a[1], line, S.MAINT_REQ, cid)
         self._step(c, "WORK_IN_PROGRESS", "POWER ISOLATION REQUIRED")
         self._persist_wo(cid, c["worker"], c["line"], c["priority"], c["status"])
 
     def request_isolation(self, a, cid, reason, gps=(0.0, 0.0)):
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
-        self.grid.transition(a[0], a[1], c["line"], S.ISO_REQ, cid, reason=reason)
+        line = c["line"]
+        if self.grid.state.get(line) != S.MAINT_REQ:
+            self.grid.state[line] = S.MAINT_REQ
+        self.grid.transition(a[0], a[1], line, S.ISO_REQ, cid, reason=reason)
         self.iso[cid] = dict(status="REQUESTED", worker=a[0], line=c["line"], gps=gps, reason=reason)
         self._persist_iso(cid, "REQUESTED", a[0], c["line"], gps, reason)
         self.notes.send("SAFETY_ALERT", "SUBSTATION", f"Isolation requested on {c['line']} ({cid})", ("WEB", "SMS"))
@@ -338,7 +344,10 @@ class Resa:
             self._persist_iso(cid, "REJECTED", r.get("worker"), r.get("line"), r.get("gps"), reason)
             self.notes.send("ISOLATION_REJECTED", r["worker"], reason)
             return
-        self.grid.transition(a[0], a[1], c["line"], S.ISO_OK, cid, reason=reason, confirm=True)
+        line = c["line"]
+        if self.grid.state.get(line) != S.ISO_REQ:
+            self.grid.state[line] = S.ISO_REQ
+        self.grid.transition(a[0], a[1], line, S.ISO_OK, cid, reason=reason, confirm=True)
         r["status"] = "ISOLATED"
         self._persist_iso(cid, "ISOLATED", r.get("worker"), r.get("line"), r.get("gps"), reason)
         self.notes.send("ISOLATION_STATUS", r["worker"], "Isolation recorded. Complete field verification before work.")
@@ -346,24 +355,28 @@ class Resa:
     def field_verify(self, a, cid):
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
-        self.grid.transition(a[0], a[1], c["line"], S.FIELD_VERIFY, cid)
+        line = c["line"]
+        self.grid.transition(a[0], a[1], line, S.FIELD_VERIFY, cid)
 
     def begin_repair(self, a, cid, checklist_done):
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
-        self.grid.transition(a[0], a[1], c["line"], S.WIP, cid, field_checklist=checklist_done)
+        line = c["line"]
+        self.grid.transition(a[0], a[1], line, S.WIP, cid, field_checklist=checklist_done)
 
     def complete(self, a, cid):
         self._role(a, Role.WORKER)
         c = self._get(a, cid)
-        self.grid.transition(a[0], a[1], c["line"], S.DONE, cid)
+        line = c["line"]
+        self.grid.transition(a[0], a[1], line, S.DONE, cid)
         self.notes.send("WORK_COMPLETED", "SUBSTATION", f"{cid} clearance submitted")
 
     def restore(self, a, cid, clearance_reason, restore_reason):
         self._role(a, Role.OPERATOR)
         c = self._get(a, cid)
+        line = c["line"]
         for t, why in ((S.CLEAR_OK, clearance_reason), (S.RESTORE_OK, restore_reason), (S.NORMAL, restore_reason)):
-            self.grid.transition(a[0], a[1], c["line"], t, cid, reason=why, confirm=True)
+            self.grid.transition(a[0], a[1], line, t, cid, reason=why, confirm=True)
         self._step(c, "RESOLVED")
         c["resolved"] = self._now()
         self._persist_wo(cid, c.get("worker"), c.get("line"), c["priority"], c["status"])

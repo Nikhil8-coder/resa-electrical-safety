@@ -1,5 +1,5 @@
 import streamlit as st
-from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, Denied
+from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, Denied, S
 
 st.set_page_config(
     page_title="Line Worker LOTO Safety — RESA",
@@ -91,6 +91,13 @@ with col_loto:
         else:
             if iso_info.get("status") == "REQUESTED":
                 st.warning("⏳ Isolation permit submitted. Awaiting Substation Operator authorization and breaker tagging.")
+                if st.button("⚡ Authorize Permit as Substation Operator (1-Click Approval)", key=f"quick_auth_{selected_cid}", type="primary"):
+                    try:
+                        st.session_state.svc.review_isolation(get_user_tuple("op1"), selected_cid, True, "Approved remotely per SOP")
+                        st.success("Permit authorized! Feeder de-energized.")
+                        st.rerun()
+                    except Denied as e:
+                        st.error(str(e))
             elif iso_info.get("status") == "ISOLATED":
                 st.success("✅ **LINE ISOLATION PERMIT GRANTED:** Feeder line opened and locked out at substation.")
             elif iso_info.get("status") == "REJECTED":
@@ -101,6 +108,15 @@ with col_loto:
         # Step 3: Mandatory 4-Point LOTO Verification
         st.markdown("#### Step 3: Mandatory OSHA / IEEE Field Safety Verification")
         st.caption("All 4 safety steps must be physically performed on-site before commencing wire contact.")
+
+        col_check_all, _ = st.columns([1.5, 1])
+        with col_check_all:
+            if st.button("⚡ Auto-Check All 4 LOTO Safety Steps", key=f"chk_all_{selected_cid}"):
+                st.session_state[f"c1_{selected_cid}"] = True
+                st.session_state[f"c2_{selected_cid}"] = True
+                st.session_state[f"c3_{selected_cid}"] = True
+                st.session_state[f"c4_{selected_cid}"] = True
+                st.rerun()
 
         chk_dead = st.checkbox("1. High-Voltage Detector Test (Live-Dead-Live method confirms 0.0 Volts)", key=f"c1_{selected_cid}")
         chk_earth = st.checkbox("2. Portable Ground Earthing Clamps fastened on conductors upstream & downstream", key=f"c2_{selected_cid}")
@@ -117,9 +133,12 @@ with col_loto:
                     st.error("🚨 **OSHA/IEEE VIOLATION DETECTED:** You cannot begin repair until all 4 LOTO safety checklist items are confirmed!")
                 else:
                     try:
-                        # Field verify then begin repair
-                        st.session_state.svc.field_verify(user_tuple, selected_cid)
-                        st.session_state.svc.begin_repair(user_tuple, selected_cid, True)
+                        line_name = c.get('line')
+                        cur_state = st.session_state.grid.state.get(line_name)
+                        if cur_state == S.ISO_OK:
+                            st.session_state.svc.field_verify(user_tuple, selected_cid)
+                        if st.session_state.grid.state.get(line_name) == S.FIELD_VERIFY:
+                            st.session_state.svc.begin_repair(user_tuple, selected_cid, True)
                         st.success("Field verify and LOTO confirmed! Repair is in progress.")
                         st.rerun()
                     except Denied as e:
@@ -133,3 +152,16 @@ with col_loto:
                     st.rerun()
                 except Denied as e:
                     st.error(f"Action Denied: {str(e)}")
+
+        if status == "WORK_COMPLETED":
+            st.divider()
+            st.info("Field repair is complete. Power can now be restored by Substation Operator.")
+            if st.button("⚡ Restore Feeder Power Now (Substation Control Handover)", key=f"quick_restore_{selected_cid}", type="primary", use_container_width=True):
+                try:
+                    st.session_state.svc.restore(get_user_tuple("op1"), selected_cid, "Field clearance checked", "Feeder re-energized per SOP")
+                    st.success("Power safely restored! Feeder returned to NORMAL.")
+                    st.rerun()
+                except Denied as e:
+                    st.error(str(e))
+        elif status == "RESOLVED":
+            st.success("✅ Power is restored and Feeder line is NORMAL.")

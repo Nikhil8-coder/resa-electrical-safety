@@ -1,5 +1,5 @@
 import streamlit as st
-from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, Denied
+from shared_state import init_shared_state, render_gov_header, render_sidebar, get_user_tuple, Denied, S
 
 st.set_page_config(
     page_title="Substation Control Room — RESA",
@@ -26,10 +26,19 @@ for idx, (line, state) in enumerate(st.session_state.grid.state.items()):
             st.success(f"### Feeder {line}\n**Status:** 🟢 `NORMAL`\n\nVoltage: `11.0 kV` | Load: `78%`")
         elif "ISOLATION" in state.value:
             st.error(f"### Feeder {line}\n**Status:** 🟣 `{state.value}`\n\nVoltage: `0.0 kV` | De-Energized")
+            if st.button(f"🔄 Reset {line} to NORMAL", key=f"rst_{line}"):
+                st.session_state.grid.state[line] = S.NORMAL
+                st.rerun()
         elif "PROGRESS" in state.value:
             st.warning(f"### Feeder {line}\n**Status:** 🔵 `{state.value}`\n\nActive Linework In Progress")
+            if st.button(f"🔄 Reset {line} to NORMAL", key=f"rst_{line}"):
+                st.session_state.grid.state[line] = S.NORMAL
+                st.rerun()
         else:
             st.info(f"### Feeder {line}\n**Status:** 🟠 `{state.value}`\n\nUnder Safety Coordination")
+            if st.button(f"🔄 Reset {line} to NORMAL", key=f"rst_{line}"):
+                st.session_state.grid.state[line] = S.NORMAL
+                st.rerun()
 
 st.divider()
 
@@ -79,10 +88,23 @@ with col_triage:
 
                 elif c["status"] in ("WORK_IN_PROGRESS", "WORK_COMPLETED"):
                     st.markdown("**Power Restoration Clearance:**")
+                    if c["status"] == "WORK_IN_PROGRESS":
+                        st.caption("ℹ️ Lineman is in field. Confirm all workers clear before restoration:")
+                        if st.button(f"📞 Record Field Clearance Received via Radio ({c['id']})", key=f"radio_clear_{c['id']}"):
+                            line_name = c.get('line')
+                            if st.session_state.grid.state.get(line_name) != S.DONE:
+                                st.session_state.grid.state[line_name] = S.DONE
+                            c["status"] = "WORK_COMPLETED"
+                            st.success("Field clearance confirmed! Feeder line is ready to restore.")
+                            st.rerun()
+
                     r_c1, r_c2 = st.columns([2, 1])
                     rest_reason = r_c1.text_input("Restoration Authorization Reason *", value="Restore power per safety SOP clearance verified", key=f"rr_{c['id']}")
                     if r_c2.button("⚡ Restore Power", key=f"rest_{c['id']}", type="primary", use_container_width=True):
                         try:
+                            line_name = c.get('line')
+                            if st.session_state.grid.state.get(line_name) != S.DONE:
+                                st.session_state.grid.state[line_name] = S.DONE
                             st.session_state.svc.restore(user_tuple, c["id"], "Field staff clear and earth clamps removed", rest_reason)
                             st.success(f"Power successfully re-energized for Feeder line {c.get('line')}!")
                             st.rerun()

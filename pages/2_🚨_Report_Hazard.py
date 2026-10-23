@@ -37,7 +37,7 @@ with col_form:
         description = st.text_area(
             "Detailed Description of Incident / Hazard *",
             placeholder="Please detail exact location landmarks, extent of damage, presence of water/fire, and immediate public safety risk...",
-            rows=4
+            height=120
         )
 
         st.markdown("**📍 Location & GPS Coordinates**")

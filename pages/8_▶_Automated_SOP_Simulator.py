@@ -1,6 +1,6 @@
 import time
 import streamlit as st
-from shared_state import init_shared_state, render_gov_header, render_sidebar, Role
+from shared_state import init_shared_state, render_gov_header, render_sidebar, Role, S
 
 st.set_page_config(
     page_title="10-Stage SOP Simulator — RESA",
@@ -33,6 +33,9 @@ with col_run:
 
         try:
             with status_box:
+                # Ensure feeder LN-204 is in clean NORMAL state before beginning
+                st.session_state.grid.state["LN-204"] = S.NORMAL
+
                 # Stage 1: Citizen creates complaint
                 st.write("**Stage 1:** 👤 Citizen `cit1` reports high-priority Transformer Failure with GPS & photo...")
                 cid = st.session_state.svc.create(

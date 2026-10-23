@@ -72,7 +72,6 @@ def render_gov_header():
             <div>
                 <span style="font-size: 11px; letter-spacing: 1.5px; color: #ff9933; font-weight: 700; text-transform: uppercase;">Ministry of Power & Energy Distribution • Government Utility Services</span>
                 <h3 style="margin: 2px 0 0 0; color: #ffffff; font-size: 18px; font-weight: 800;">⚡ RESA — National Electrical Safety & Breakdown Coordination Portal</h3>
-                <span style="color: #94a3b8; font-size: 12px;">Digital Lock-Out / Tag-Out (LOTO) Enforcement & Public Hazard Dispatch</span>
             </div>
             <div style="text-align: right; margin-top: 6px;">
                 <span style="background: #ef4444; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 12px; letter-spacing: 0.5px;">🚨 TOLL-FREE 24x7 HELPLINE: 1912</span>
